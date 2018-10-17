@@ -5,7 +5,6 @@ namespace Miaoxing\WechatTag;
 use Miaoxing\Plugin\BasePlugin;
 use Miaoxing\User\Service\UserModel;
 use Miaoxing\UserTag\Service\UserTagModel;
-use Miaoxing\UserTag\Service\UserTagsUserModel;
 use Wei\RetTrait;
 
 class Plugin extends BasePlugin
@@ -53,34 +52,31 @@ class Plugin extends BasePlugin
         return $this->suc();
     }
 
-    public function onBeforeUserTagsUserUpdate(
-        UserModel $user,
-        UserTagsUserModel $userTagsUsers,
-        $addTagIds,
-        $deleteTagIds
-    ) {
-        if (!$user->wechatOpenId) {
+    public function onBeforeUserTagsUserUpdate(UserModel $users, $addTagIds, $deleteTagIds)
+    {
+        $openIds = array_filter($users->getAll('wechatOpenId'));
+        if (!$openIds) {
             return;
         }
 
-        $ret = $this->addTagIds($user, $addTagIds);
+        $ret = $this->addTagIds($openIds, $addTagIds);
         if ($ret['code'] !== 1) {
             return $ret;
         }
 
-        $ret = $this->deleteTagIds($user, $deleteTagIds);
+        $ret = $this->deleteTagIds($openIds, $deleteTagIds);
         if ($ret['code'] !== 1) {
             return $ret;
         }
     }
 
-    protected function addTagIds(UserModel $user, $tagIds)
+    protected function addTagIds($openIds, $tagIds)
     {
         $outIds = array_filter(wei()->userTagModel()->findAllByIds($tagIds)->getAll('outId'));
         foreach ($outIds as $outId) {
             $api = wei()->wechatAccount->getCurrentAccount()->createApiService();
             $ret = $api->callAuth('cgi-bin/tags/members/batchtagging', [
-                'openid_list' => [$user->wechatOpenId],
+                'openid_list' => $openIds,
                 'tagid' => $outId,
             ]);
             if ($ret['code'] !== 1) {
@@ -90,13 +86,13 @@ class Plugin extends BasePlugin
         return $this->suc();
     }
 
-    protected function deleteTagIds(UserModel $user, $tagIds)
+    protected function deleteTagIds($openIds, $tagIds)
     {
         $outIds = array_filter(wei()->userTagModel()->findAllByIds($tagIds)->getAll('outId'));
         foreach ($outIds as $outId) {
             $api = wei()->wechatAccount->getCurrentAccount()->createApiService();
             $ret = $api->callAuth('cgi-bin/tags/members/batchuntagging', [
-                'openid_list' => [$user->wechatOpenId],
+                'openid_list' => $openIds,
                 'tagid' => $outId,
             ]);
             if ($ret['code'] !== 1) {
