@@ -114,10 +114,12 @@ class Plugin extends BasePlugin
      */
     public function onWechatSubscribe(WeChatApp $app, User $user, WechatAccount $account)
     {
-        $userTags = wei()->userTagsUserModel()->findAll(['user_id' => $user['id']]);
+        // 按原来顺序同步回去
+        $userTags = wei()->userTagsUserModel()->asc('id')->findAll(['user_id' => $user['id']]);
         if (!$userTags->length()) {
             return;
         }
-        wei()->userTag->updateTag($userTags->getAll('tag_id'));
+
+        wei()->userTag->updateTag(array_reverse($userTags->getAll('tag_id')));
     }
 }
