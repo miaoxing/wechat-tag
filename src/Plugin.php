@@ -120,6 +120,6 @@ class Plugin extends BasePlugin
             return;
         }
 
-        wei()->userTag->updateTag(array_reverse($userTags->getAll('tag_id')));
+        wei()->userTag->updateTag($userTags->getAll('tag_id'));
     }
 }
