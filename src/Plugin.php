@@ -3,9 +3,12 @@
 namespace Miaoxing\WechatTag;
 
 use Miaoxing\Plugin\BasePlugin;
+use Miaoxing\Plugin\Service\User;
 use Miaoxing\User\Service\UserModel;
 use Miaoxing\UserTag\Service\UserTagModel;
+use Miaoxing\Wechat\Service\WechatAccount;
 use Wei\RetTrait;
+use Wei\WeChatApp;
 
 class Plugin extends BasePlugin
 {
@@ -100,5 +103,21 @@ class Plugin extends BasePlugin
             }
         }
         return $this->suc();
+    }
+
+    /**
+     * 用户重新关注时,加入到原来的标签
+     *
+     * @param WeChatApp $app
+     * @param \Miaoxing\Plugin\Service\User $user
+     * @param \Miaoxing\Wechat\Service\WechatAccount $account
+     */
+    public function onWechatSubscribe(WeChatApp $app, User $user, WechatAccount $account)
+    {
+        $userTags = wei()->userTagsUserModel()->findAll(['user_id' => $user['id']]);
+        if (!$userTags->length()) {
+            return;
+        }
+        wei()->userTag->updateTag($userTags->getAll('tag_id'));
     }
 }
